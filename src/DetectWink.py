@@ -16,6 +16,7 @@ def detectWink(frame, location, ROI, cascade):
         cv2.rectangle(frame, (x,y), (x+w,y+h), (0, 0, 255), 2)
     return len(eyes) == 1    # number of eyes is one
 
+
 def detect(frame, faceCascade, eyesCascade):
     gray_frame = cv2.cvtColor(frame, cv2.COLOR_BGR2GRAY) 
 
