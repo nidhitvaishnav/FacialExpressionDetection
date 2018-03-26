@@ -4,9 +4,20 @@ import os
 from os import listdir
 from os.path import isfile, join
 import sys
+from plotly.api.v2.grids import row
 
 def detectShush(frame, location, ROI, cascade):
-    mouths = cascade.detectMultiScale(ROI, 1.15, 3, 0, (20, 20)) 
+    scaleFactor = 1.65
+    neighbors = 4
+    flag = 0
+    minSize = (20,20)
+    row, col = ROI.shape
+    newRow  = int(row*1/5)
+    ROI = ROI[newRow:row, :]
+#     cv2.imshow("ROI", ROI)
+#     cv2.waitKey(0)
+#     cv2.destroyAllWindows()
+    mouths = cascade.detectMultiScale(ROI, scaleFactor, neighbors, flag, minSize) 
     for (mx, my, mw, mh) in mouths:
         mx += location[0]
         my += location[1]
@@ -16,11 +27,15 @@ def detectShush(frame, location, ROI, cascade):
 def detect(frame, faceCascade, mouthsCascade):
     gray_frame = cv2.cvtColor(frame, cv2.COLOR_BGR2GRAY) 
 
-#    gray_frame = cv2.equalizeHist(gray_frame)
-#    gray_frame = cv2.medianBlur(gray_frame, 5)
+#     gray_frame = cv2.equalizeHist(gray_frame)
+#     gray_frame = cv2.medianBlur(gray_frame, 5)
 
-    faces = faceCascade.detectMultiScale(
-                gray_frame, 1.15, 4, 0|cv2.CASCADE_SCALE_IMAGE, (40, 40))
+    scaleFactor = 1.2
+    neighbors = 4
+    flag =  0|cv2.CASCADE_SCALE_IMAGE
+    minSize =  (40, 40)
+
+    faces = faceCascade.detectMultiScale(gray_frame, scaleFactor, neighbors, flag, minSize)
     detected = 0
     for (x, y, w, h) in faces:
         # ROI for mouth
@@ -88,8 +103,7 @@ if __name__ == "__main__":
 
     # load pretrained cascades
     face_cascade = cv2.CascadeClassifier(cv2.data.haarcascades + 'haarcascade_frontalface_default.xml')
-    mouth_cascade = cv2.CascadeClassifier('https://www.utdallas.edu/~hschweitzer/restricted/teach/currentvis/code-examples/Mouth.xml')
-#     mouth_cascade = cv2.CascadeClassifier('https://github.com/sightmachine/SimpleCV/blob/master/SimpleCV/Features/HaarCascades/mouth.xml')
+    mouth_cascade = cv2.CascadeClassifier('./Mouth.xml')
     if(len(sys.argv) == 2): # one argument
         folderName = sys.argv[1]
         detections = run_on_folder(face_cascade, mouth_cascade, folderName)

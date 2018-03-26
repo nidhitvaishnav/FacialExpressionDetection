@@ -6,8 +6,20 @@ from os.path import isfile, join
 import sys
 
 def detectWink(frame, location, ROI, cascade):
-    eyes = cascade.detectMultiScale(
-        ROI, 1.15, 3, 0|cv2.CASCADE_SCALE_IMAGE, (10, 20)) 
+#     ROI = cv2.equalizeHist(ROI)
+    scaleFactor = 1.15
+    #to increase the reliability (Higher value-> heigher reliability)
+    neighbors = 5
+    flag = 0|cv2.CASCADE_SCALE_IMAGE
+    minSize = (10,20)
+    row, col = ROI.shape
+    
+    newRow  = int(row*3/5)
+    ROI = ROI[0:newRow, :]
+#     cv2.imshow("ROI", ROI)
+#     cv2.waitKey(0)
+#     cv2.destroyAllWindows()
+    eyes = cascade.detectMultiScale(ROI, scaleFactor, neighbors, flag, minSize) 
     for e in eyes:
         e[0] += location[0]
         e[1] += location[1]
@@ -19,26 +31,34 @@ def detectWink(frame, location, ROI, cascade):
 
 def detect(frame, faceCascade, eyesCascade):
     gray_frame = cv2.cvtColor(frame, cv2.COLOR_BGR2GRAY) 
-
     # possible frame pre-processing:
-    # gray_frame = cv2.equalizeHist(gray_frame)
-    # gray_frame = cv2.medianBlur(gray_frame, 5)
+#     gray_frame = cv2.equalizeHist(gray_frame)
+#     gray_frame = cv2.medianBlur(gray_frame, 7)
+#     cv2.imshow("gray frame", gray_frame)
 
-    scaleFactor = 1.15 # range is from 1 to ..
-    minNeighbors = 3   # range is from 0 to ..
-    flag = 0|cv2.CASCADE_SCALE_IMAGE # either 0 or 0|cv2.CASCADE_SCALE_IMAGE 
+
+    scaleFactor = 1.25 # range is from 1 to ..
+    minNeighbors = 4   # range is from 0 to ..
+    flag = 0 # either 0 or 0|cv2.CASCADE_SCALE_IMAGE 
     minSize = (30,30) # range is from (0,0) to ..
+ 
     faces = faceCascade.detectMultiScale(
-        gray_frame, 
+        gray_frame,
         scaleFactor, 
         minNeighbors, 
         flag, 
         minSize)
+    
+    # debug
+    print("# faces  = {}".format(faces.__class__))
+    # debug -ends
 
     detected = 0
-    for f in faces:
-        x, y, w, h = f[0], f[1], f[2], f[3]
+    for (x,y,w,h) in faces:
+#         x, y, w, h = f[0], f[1], f[2], f[3]
         faceROI = gray_frame[y:y+h, x:x+w]
+#         cv2.imshow("Face ROI", faceROI)
+#         cv2.waitKey(0)
         if detectWink(frame, (x, y), faceROI, eyesCascade):
             detected += 1
             cv2.rectangle(frame, (x,y), (x+w,y+h), (255, 0, 0), 2)
@@ -65,6 +85,7 @@ def run_on_folder(cascade1, cascade2, folder):
             cv2.namedWindow(windowName, cv2.WINDOW_AUTOSIZE)
             cv2.imshow(windowName, img)
             cv2.waitKey(0)
+            cv2.destroyAllWindows()
     return totalCount
 
 def runonVideo(face_cascade, eyes_cascade):
@@ -104,6 +125,10 @@ if __name__ == "__main__":
                                       + 'haarcascade_frontalface_default.xml')
     eye_cascade = cv2.CascadeClassifier(cv2.data.haarcascades 
                                       + 'haarcascade_eye.xml')
+    # debug
+    print("cv2.data.haarcascades = {}".format(cv2.data.haarcascades))
+    # debug -ends
+
 
     if(len(sys.argv) == 2): # one argument
         folderName = sys.argv[1]
