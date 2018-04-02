@@ -5,7 +5,13 @@ from os import listdir
 from os.path import isfile, join
 import sys
 
+# |----------------------------------------------------------------------------|
+# detectWink
+# |----------------------------------------------------------------------------|
 def detectWink(frame, location, ROI, cascade):
+    '''
+    
+    '''
 #     ROI = cv2.equalizeHist(ROI)
     scaleFactor = 1.15
     #to increase the reliability (Higher value-> heigher reliability)
@@ -20,6 +26,9 @@ def detectWink(frame, location, ROI, cascade):
 #     cv2.waitKey(0)
 #     cv2.destroyAllWindows()
     eyes = cascade.detectMultiScale(ROI, scaleFactor, neighbors, flag, minSize) 
+    eyes = check_box_in_box(eyes)
+
+    
     for e in eyes:
         e[0] += location[0]
         e[1] += location[1]
@@ -27,8 +36,12 @@ def detectWink(frame, location, ROI, cascade):
         
         cv2.rectangle(frame, (x,y), (x+w,y+h), (0, 0, 255), 2)
     return len(eyes) == 1    # number of eyes is one
-
-
+        
+# |--------------------------------detectWink---------------------------------|
+    
+# |----------------------------------------------------------------------------|
+# detect
+# |----------------------------------------------------------------------------|
 def detect(frame, faceCascade, eyesCascade):
     gray_frame = cv2.cvtColor(frame, cv2.COLOR_BGR2GRAY) 
     # possible frame pre-processing:
@@ -49,9 +62,12 @@ def detect(frame, faceCascade, eyesCascade):
         flag, 
         minSize)
     
-    # debug
-    print("# faces  = {}".format(faces.__class__))
-    # debug -ends
+#     if len(faces)==0:
+#         print("No face has been found")
+#     else:
+    print("New image")
+    faces = check_box_in_box(faces)
+     
 
     detected = 0
     for (x,y,w,h) in faces:
@@ -65,8 +81,56 @@ def detect(frame, faceCascade, eyesCascade):
         else:
             cv2.rectangle(frame, (x,y), (x+w,y+h), (0, 255, 0), 2)
     return detected
+        
+# |--------------------------------detect---------------------------------|
 
 
+# |----------------------------------------------------------------------------|
+# check_box_in_box
+# |----------------------------------------------------------------------------|
+def check_box_in_box(boxList):
+    '''
+    check whether the more than 1 object are around the same object and box inside box case
+    If yes, take the larger box
+    '''
+
+    finalBoxList = []
+    insideBoxList = []
+    for index1, box1 in enumerate(boxList):
+        for index2, box2 in enumerate(boxList):
+            if index1==index2:
+                continue
+            x1,y1,xx1,yy1 = box1[0],box1[1],box1[0]+box1[2],box1[1]+box1[3]
+            x2,y2,xx2,yy2 = box2[0],box2[1],box2[0]+box2[2],box2[1]+box2[3]
+
+            # debug
+            print("box1 = {}: ({},{},{},{})".format(box1, x1,y1,xx1,yy1))
+            print("box2 = {} ({},{},{},{})".format(box2,x2,y2,xx2,yy2))
+            
+            # debug -ends
+
+
+            if not(box1.tolist() in insideBoxList):
+                if x1<x2+3 and y1<y2+3 and xx1>xx2-3 and yy1>yy2-3:
+                    insideBoxList.append(box2.tolist())
+                #if -ends
+            #if not -ends
+        #for index2 -ends
+    #for index1 -ends
+    # debug
+    print("insideBoxList := {}".format(insideBoxList))
+    # debug -ends
+
+    for box in boxList:
+        if box.tolist() not in insideBoxList:
+            finalBoxList.append(box)
+
+    return finalBoxList
+# |--------------------------------check_box_in_box---------------------------------|
+
+# |----------------------------------------------------------------------------|
+# run_on_folder
+# |----------------------------------------------------------------------------| 
 def run_on_folder(cascade1, cascade2, folder):
     if(folder[-1] != "/"):
         folder = folder + "/"
@@ -87,7 +151,11 @@ def run_on_folder(cascade1, cascade2, folder):
             cv2.waitKey(0)
             cv2.destroyAllWindows()
     return totalCount
-
+# |--------------------------------run_on_folder---------------------------------|
+    
+# |----------------------------------------------------------------------------|
+# runonVideo
+# |----------------------------------------------------------------------------|
 def runonVideo(face_cascade, eyes_cascade):
     videocapture = cv2.VideoCapture(0)
     if not videocapture.isOpened():
@@ -98,19 +166,23 @@ def runonVideo(face_cascade, eyes_cascade):
     showlive = True
     while(showlive):
         ret, frame = videocapture.read()
-
+ 
         if not ret:
             print("Can't capture frame")
             exit()
-
+ 
         detect(frame, face_cascade, eyes_cascade)
         cv2.imshow(windowName, frame)
         if cv2.waitKey(30) >= 0:
             showlive = False
-    
+     
     # outside the while loop
     videocapture.release()
     cv2.destroyAllWindows()
+
+        
+# |--------------------------------runonVideo---------------------------------|
+    
 
 
 if __name__ == "__main__":
@@ -125,6 +197,7 @@ if __name__ == "__main__":
                                       + 'haarcascade_frontalface_default.xml')
     eye_cascade = cv2.CascadeClassifier(cv2.data.haarcascades 
                                       + 'haarcascade_eye.xml')
+#     big_eye_cascade = cv2.CascadeClassifier(cv2.data.haarcascades + "https://github.com/sightmachine/SimpleCV/blob/master/SimpleCV/Features/HaarCascades/two_eyes_big.xml")
     # debug
     print("cv2.data.haarcascades = {}".format(cv2.data.haarcascades))
     # debug -ends
@@ -132,7 +205,9 @@ if __name__ == "__main__":
 
     if(len(sys.argv) == 2): # one argument
         folderName = sys.argv[1]
+#         detections = run_on_folder(face_cascade, eye_cascade, folderName)
         detections = run_on_folder(face_cascade, eye_cascade, folderName)
+
         print("Total of ", detections, "detections")
     else: # no arguments
         runonVideo(face_cascade, eye_cascade)
