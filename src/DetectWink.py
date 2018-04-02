@@ -19,9 +19,9 @@ def detectWink(frame, location, ROI, cascade):
     flag = 0|cv2.CASCADE_SCALE_IMAGE
     minSize = (10,20)
     row, col = ROI.shape
-    
-    newRow  = int(row*3/5)
-    ROI = ROI[0:newRow, :]
+    if frame.shape!=ROI.shape:
+        newRow  = int(row*3/5)
+        ROI = ROI[0:newRow, :]
 #     cv2.imshow("ROI", ROI)
 #     cv2.waitKey(0)
 #     cv2.destroyAllWindows()
