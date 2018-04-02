@@ -61,15 +61,20 @@ def detect(frame, faceCascade, eyesCascade):
         minNeighbors, 
         flag, 
         minSize)
-    
-#     if len(faces)==0:
-#         print("No face has been found")
-#     else:
-    print("New image")
-    faces = check_box_in_box(faces)
+  
+    detected = 0  
+    if len(faces)==0:
+        print("No face has been found")
+        faceROI = gray_frame
+        if detectWink(frame, (0, 0), faceROI, eyesCascade):
+            detected += 1
+            print("Wink detected")
+    else:
+        print("New image")
+        faces = check_box_in_box(faces)
      
 
-    detected = 0
+
     for (x,y,w,h) in faces:
 #         x, y, w, h = f[0], f[1], f[2], f[3]
         faceROI = gray_frame[y:y+h, x:x+w]
@@ -77,6 +82,7 @@ def detect(frame, faceCascade, eyesCascade):
 #         cv2.waitKey(0)
         if detectWink(frame, (x, y), faceROI, eyesCascade):
             detected += 1
+            print("wink detected")
             cv2.rectangle(frame, (x,y), (x+w,y+h), (255, 0, 0), 2)
         else:
             cv2.rectangle(frame, (x,y), (x+w,y+h), (0, 255, 0), 2)
@@ -103,11 +109,6 @@ def check_box_in_box(boxList):
             x1,y1,xx1,yy1 = box1[0],box1[1],box1[0]+box1[2],box1[1]+box1[3]
             x2,y2,xx2,yy2 = box2[0],box2[1],box2[0]+box2[2],box2[1]+box2[3]
 
-            # debug
-            print("box1 = {}: ({},{},{},{})".format(box1, x1,y1,xx1,yy1))
-            print("box2 = {} ({},{},{},{})".format(box2,x2,y2,xx2,yy2))
-            
-            # debug -ends
 
 
             if not(box1.tolist() in insideBoxList):
@@ -117,9 +118,6 @@ def check_box_in_box(boxList):
             #if not -ends
         #for index2 -ends
     #for index1 -ends
-    # debug
-    print("insideBoxList := {}".format(insideBoxList))
-    # debug -ends
 
     for box in boxList:
         if box.tolist() not in insideBoxList:
