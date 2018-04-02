@@ -143,11 +143,17 @@ def run_on_folder(cascade1, cascade2, folder):
             totalCount += lCnt
             if windowName != None:
                 cv2.destroyWindow(windowName)
-            windowName = f
+            
+            windowName = os.path.basename(f)
             cv2.namedWindow(windowName, cv2.WINDOW_AUTOSIZE)
             cv2.imshow(windowName, img)
             cv2.waitKey(0)
             cv2.destroyAllWindows()
+
+            outputPath = "../winkOP/"+windowName
+            print(outputPath)
+            cv2.imwrite(outputPath, img)
+
     return totalCount
 # |--------------------------------run_on_folder---------------------------------|
     

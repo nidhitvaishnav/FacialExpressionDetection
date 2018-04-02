@@ -4,21 +4,20 @@ import os
 from os import listdir
 from os.path import isfile, join
 import sys
-from plotly.api.v2.grids import row
 
 # |----------------------------------------------------------------------------|
 # detectShush
 # |----------------------------------------------------------------------------|
 
 def detectShush(frame, location, ROI, cascade):
-    scaleFactor = 1.50
+    scaleFactor = 1.5 
     neighbors = 5
     flag = 0|cv2.CASCADE_SCALE_IMAGE
     minSize = (10,10)
     row, col = ROI.shape
-
-    cv2.imshow("ROI", ROI)
-    cv2.waitKey(0)
+ 
+#     cv2.imshow("ROI", ROI)
+#     cv2.waitKey(0)
     cv2.destroyAllWindows()
     mouths = cascade.detectMultiScale(ROI, scaleFactor, neighbors, flag, minSize) 
     mouths = check_box_in_box(mouths)
@@ -134,10 +133,15 @@ def run_on_folder(cascade1, cascade2, folder):
             totalCnt += lCnt
             if windowName != None:
                 cv2.destroyWindow(windowName)
-            windowName = f
+            windowName = os.path.basename(f)
+
+
             cv2.namedWindow(windowName, cv2.WINDOW_AUTOSIZE)
             cv2.imshow(windowName, img)
             cv2.waitKey(0)
+            outputPath = "../shushOP/"+windowName
+            print(outputPath)
+            cv2.imwrite(outputPath, img)
     return totalCnt
         
 # |--------------------------------run_on_folder---------------------------------|
